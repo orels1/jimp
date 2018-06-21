@@ -2568,7 +2568,7 @@ Jimp.prototype.color = Jimp.prototype.colour = function (actions, cb) {
     else return this;
 }
 
-var parseXML = require('parse-bmfont-xml')
+var parseXML = require('parse-bmfont-xml');
 const fetch = require('node-fetch');
 
 const loadBMFont = (opt, cb) => {
@@ -2584,6 +2584,7 @@ const loadBMFont = (opt, cb) => {
         result = parseXML(data);
         cb(null, result);
     })
+};
 
 /**
  * Loads a bitmap font from a file
