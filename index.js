@@ -14,7 +14,6 @@ var PixelMatch = require("pixelmatch");
 var EXIFParser = require("exif-parser");
 var ImagePHash = require("./phash.js");
 var BigNumber = require('bignumber.js');
-var BMFont = require("load-bmfont/browser");
 var Path = require("path");
 var MkDirP = require("mkdirp");
 var Request = require("./src/request");
@@ -2569,6 +2568,28 @@ Jimp.prototype.color = Jimp.prototype.colour = function (actions, cb) {
     else return this;
 }
 
+var parseASCII = require('parse-bmfont-ascii')
+var parseXML = require('parse-bmfont-xml')
+var readBinary = require('parse-bmfont-binary')
+var mime = require('mime')
+var noop = function(){}
+var isBinary = require('./lib/is-binary')
+const fetch = require('node-fetch');
+
+const loadBMFont = (opt, cb) => {
+  cb = typeof cb === 'function' ? cb : noop
+  if (typeof opt === 'string')
+    opt = { uri: opt }
+  else if (!opt)
+    opt = {}
+
+  var file = opt.uri || opt.url
+  fetch(file).then((resp) => resp.text)
+     .then(data => {
+        result = parseXML(data);
+        cb(null, result);
+    })
+
 /**
  * Loads a bitmap font from a file
  * @param file the file path of a .fnt file
@@ -2587,7 +2608,7 @@ Jimp.loadFont = function (file, cb) {
             else resolve(font);
         }
 
-        BMFont(file, function (err, font) {
+        loadBMFont(file, function (err, font) {
             var chars = {};
             var kernings = {};
 
