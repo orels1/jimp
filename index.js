@@ -2568,12 +2568,7 @@ Jimp.prototype.color = Jimp.prototype.colour = function (actions, cb) {
     else return this;
 }
 
-var parseASCII = require('parse-bmfont-ascii')
 var parseXML = require('parse-bmfont-xml')
-var readBinary = require('parse-bmfont-binary')
-var mime = require('mime')
-var noop = function(){}
-var isBinary = require('./lib/is-binary')
 const fetch = require('node-fetch');
 
 const loadBMFont = (opt, cb) => {
