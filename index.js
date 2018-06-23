@@ -2571,28 +2571,13 @@ Jimp.prototype.color = Jimp.prototype.colour = function (actions, cb) {
 var parseXML = require('parse-bmfont-xml');
 const fetch = require('node-fetch');
 
-const loadBMFont = (opt, cb) => {
-  cb = typeof cb === 'function' ? cb : noop
-  if (typeof opt === 'string')
-    opt = { uri: opt }
-  else if (!opt)
-    opt = {}
-
-  var file = opt.uri || opt.url
-  fetch(file).then((resp) => resp.text)
-     .then(data => {
-        result = parseXML(data);
-        cb(null, result);
-    })
-};
-
 /**
  * Loads a bitmap font from a file
  * @param file the file path of a .fnt file
  * @param (optional) cb a function to call when the font is loaded
  * @returns a promise
  */
-Jimp.loadFont = function (file, cb) {
+Jimp.loadFont = function (file, imageFile, cb) {
     if (typeof file !== "string")
         return throwError.call(this, "file must be a string", cb);
 
@@ -2604,32 +2589,42 @@ Jimp.loadFont = function (file, cb) {
             else resolve(font);
         }
 
-        loadBMFont(file, function (err, font) {
-            var chars = {};
-            var kernings = {};
+        fetch(file).then(resp => resp.text())
+            .then((data) => {
+                const font = parseXML(data);
 
-            if (err) return throwError.call(that, err, cb);
+                var chars = {};
+                var kernings = {};
 
-            for (let i = 0; i < font.chars.length; i++) {
-                chars[String.fromCharCode(font.chars[i].id)] = font.chars[i];
-            }
+                for (let i = 0; i < font.chars.length; i++) {
+                    chars[String.fromCharCode(font.chars[i].id)] = font.chars[i];
+                }
 
-            for (let i = 0; i < font.kernings.length; i++) {
-                var firstString = String.fromCharCode(font.kernings[i].first);
-                kernings[firstString] = kernings[firstString] || {};
-                kernings[firstString][String.fromCharCode(font.kernings[i].second)] = font.kernings[i].amount;
-            }
+                for (let i = 0; i < font.kernings.length; i++) {
+                    var firstString = String.fromCharCode(font.kernings[i].first);
+                    kernings[firstString] = kernings[firstString] || {};
+                    kernings[firstString][String.fromCharCode(font.kernings[i].second)] = font.kernings[i].amount;
+                }
 
-            loadPages(Path.dirname(file), font.pages).then(function (pages) {
-                cb(null, {
+                // SERIOUS MONKEYPATCHING!!!
+                Jimp.read(imageFile).then(page => cb(null, {
                     chars: chars,
                     kernings: kernings,
-                    pages: pages,
+                    pages: [page],
                     common: font.common,
                     info: font.info
-                });
+                }))
+
+                // loadPages(Path.dirname(file), font.pages).then(function (pages) {
+                //     cb(null, {
+                //         chars: chars,
+                //         kernings: kernings,
+                //         pages: pages,
+                //         common: font.common,
+                //         info: font.info
+                //     });
+                // });
             });
-        });
     });
 };
 
