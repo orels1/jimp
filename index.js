@@ -2588,43 +2588,41 @@ Jimp.loadFont = function (file, imageFile, cb) {
             if (err) reject(err);
             else resolve(font);
         }
+       
+        const data = fs.readFileSync(file);
+        const font = parseXML(data);
 
-        fetch(file).then(resp => resp.text())
-            .then((data) => {
-                const font = parseXML(data);
+        var chars = {};
+        var kernings = {};
 
-                var chars = {};
-                var kernings = {};
+        for (let i = 0; i < font.chars.length; i++) {
+            chars[String.fromCharCode(font.chars[i].id)] = font.chars[i];
+        }
 
-                for (let i = 0; i < font.chars.length; i++) {
-                    chars[String.fromCharCode(font.chars[i].id)] = font.chars[i];
-                }
+        for (let i = 0; i < font.kernings.length; i++) {
+            var firstString = String.fromCharCode(font.kernings[i].first);
+            kernings[firstString] = kernings[firstString] || {};
+            kernings[firstString][String.fromCharCode(font.kernings[i].second)] = font.kernings[i].amount;
+        }
 
-                for (let i = 0; i < font.kernings.length; i++) {
-                    var firstString = String.fromCharCode(font.kernings[i].first);
-                    kernings[firstString] = kernings[firstString] || {};
-                    kernings[firstString][String.fromCharCode(font.kernings[i].second)] = font.kernings[i].amount;
-                }
+        // SERIOUS MONKEYPATCHING!!!
+        Jimp.read(imageFile).then(page => cb(null, {
+            chars: chars,
+            kernings: kernings,
+            pages: [page],
+            common: font.common,
+            info: font.info
+        }))
 
-                // SERIOUS MONKEYPATCHING!!!
-                Jimp.read(imageFile).then(page => cb(null, {
-                    chars: chars,
-                    kernings: kernings,
-                    pages: [page],
-                    common: font.common,
-                    info: font.info
-                }))
-
-                // loadPages(Path.dirname(file), font.pages).then(function (pages) {
-                //     cb(null, {
-                //         chars: chars,
-                //         kernings: kernings,
-                //         pages: pages,
-                //         common: font.common,
-                //         info: font.info
-                //     });
-                // });
-            });
+        // loadPages(Path.dirname(file), font.pages).then(function (pages) {
+        //     cb(null, {
+        //         chars: chars,
+        //         kernings: kernings,
+        //         pages: pages,
+        //         common: font.common,
+        //         info: font.info
+        //     });
+        // });
     });
 };
 
